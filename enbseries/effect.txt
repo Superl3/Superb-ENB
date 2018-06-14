@@ -1,0 +1,723 @@
+/*
+ *	SHADER ADDON
+ * 	Featuring: 
+ *	Multipass Unsharp Mask
+ *	- Radius, Amount and Threshold controls
+ *	- Blur edges controls to reduce aliasing effects of sharpening
+ *	- Noise and Letterbox after effects
+ *	- Apply sharpening based on Depth information
+ *	By prod80 - Serenity ENB
+ */
+
+/*
+ *	ENBSeries
+ *	visit http://enbdev.com for updates
+ *	Copyright (c) 2007-2014 Boris Vorontsov
+ */ 
+ 
+//--------------------------//
+//   Internal parameters	// 
+//     Can be modified		//
+//--------------------------// 
+
+bool Section_Sharpen <
+	string UIName =  "------Sharpening------------";
+> = {false};
+bool shader_off <
+	string UIName="Show Original";
+> = {false};
+bool show_edges <
+	string UIName="Show Edges";
+> = {false};
+bool smooth_edges <
+	string UIName="Use Edge Smoothing";
+> = {true};
+float smooth <
+	string UIName="Edge Smoothing Intensity";
+	string UIWidget="Spinner";
+	float UIMin=0.3;
+	float UIMax=1;
+	float UIStep=0.001;
+> = {0.52};
+float farDepth <
+	string UIName="Depth Sharpening: Far Depth";
+	string UIWidget="Spinner";
+	float UIMin=0.0;
+	float UIMax=100000.0;
+	float UIStep=0.1;
+> = {100.0};
+float limiter <
+	string UIName="Sharpening Highlights Limiter";
+	string UIWidget="Spinner";
+	float UIMin=0;
+	float UIMax=1;
+	float UIStep=0.001;
+> = {0.1};
+bool luma_sharpen <
+	string UIName="Use Luma Sharpen";
+> = {true};
+float BlurSigmaE <
+	string UIName="Blur Sigma Exterior";
+	string UIWidget="Spinner";
+	float UIMin=0.3;
+	float UIMax=2;
+	float UIStep=0.001;
+> = {0.87};
+float BlurSigmaI <
+	string UIName="Blur Sigma Interior";
+	string UIWidget="Spinner";
+	float UIMin=0.3;
+	float UIMax=2;
+	float UIStep=0.001;
+> = {0.98};
+float SharpeningE <
+	string UIName="Sharpening Strength Exterior";
+	string UIWidget="Spinner";
+	float UIMin=0;
+	float UIMax=5;
+	float UIStep=0.001;
+> = {1.67};
+float SharpeningI <
+	string UIName="Sharpening Strength Interior";
+	string UIWidget="Spinner";
+	float UIMin=0;
+	float UIMax=5;
+	float UIStep=0.001;
+> = {1.87};
+float ThresholdE <
+	string UIName="Sharpening Threshold Exterior";
+	string UIWidget="Spinner";
+	float UIMin=0;
+	float UIMax=255;
+	float UIStep=1;
+> = {1};
+float ThresholdI <
+	string UIName="Sharpening Threshold Interior";
+	string UIWidget="Spinner";
+	float UIMin=0;
+	float UIMax=255;
+	float UIStep=1;
+> = {0};
+bool Section_Letterbox <
+	string UIName =  "------Letterbox-------------";
+> = {false};
+bool use_letterbox <
+	string UIName="Enable Letterbox";
+> = {false};
+float letterbox_size <
+	string UIName="Letterbox Size (%)";
+	string UIWidget="Spinner";
+	float UIMin=0.0;
+	float UIMax=100.0;
+	float UIStep=0.1;
+> = {7.8};
+bool Section_Noise <
+	string UIName =  "------Noise-----------------";
+> = {false};
+bool use_noise <
+	string UIName="Enable Grain";
+> = {true};
+float GrainMotion <		
+	string UIName="Grain Motion";
+	string UIWidget="Spinner";
+	float UIMin=0.0;
+	float UIMax=50.0;
+	float UIStep=0.001;
+> = {0.004};
+float GrainSaturation  <		
+	string UIName="Grain Saturation";
+	string UIWidget="Spinner";
+	float UIMin=0.0;
+	float UIMax=50.0;
+	float UIStep=0.001;
+> = {1.0};
+float GrainIntensity <		
+	string UIName="Grain Intensity";
+	string UIWidget="Spinner";
+	float UIMin=0.0;
+	float UIMax=50.0;
+	float UIStep=0.001;
+> = {0.004};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+//--------------------------//
+//   External parameters	// 
+//     Do not modify		//
+//--------------------------//
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Keyboard controlled temporary variables. 
+// Press and hold key 1,2,3...8 together with PageUp or PageDown to modify. 
+// By default all set to 1.0
+float4	tempF1; 			//0,1,2,3
+float4	tempF2; 			//5,6,7,8
+float4	tempF3; 			//9,0
+float4	Timer;				//x=generic timer in range 0..1, period of 16777216 ms (4.6 hours), w=frame time elapsed (in seconds)
+float4	ScreenSize;			//x=Width, y=1/Width, z=ScreenScaleY, w=1/ScreenScaleY
+float	ENightDayFactor;	//changes in range 0..1, 0 means that night time, 1 - day time
+float	EInteriorFactor;	//changes 0 or 1. 0 means that exterior, 1 - interior
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////
+//	TEXTURES	//
+//////////////////
+texture2D texOriginal;
+texture2D texColor;
+texture2D texNoise;
+texture2D texDepth;
+
+///////////////////
+//	 SAMPLERS	 //
+///////////////////
+sampler2D SamplerColor = sampler_state
+{
+	Texture   = <texOriginal>;
+	MinFilter = LINEAR;
+	MagFilter = LINEAR;
+	MipFilter = NONE;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+	SRGBTexture=FALSE;
+	MaxMipLevel=0;
+	MipMapLodBias=0;
+};
+
+sampler2D SamplerColor2 = sampler_state
+{
+	Texture   = <texColor>;
+	MinFilter = LINEAR;
+	MagFilter = LINEAR;
+	MipFilter = NONE;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+	SRGBTexture=FALSE;
+	MaxMipLevel=0;
+	MipMapLodBias=0;
+};
+
+sampler2D SamplerNoise = sampler_state
+{
+	Texture   = <texNoise>;
+	MinFilter = LINEAR;
+	MagFilter = LINEAR;
+	MipFilter = NONE;
+	AddressU  = Wrap;
+	AddressV  = Wrap;
+	SRGBTexture=FALSE;
+	MaxMipLevel=0;
+	MipMapLodBias=0;
+};
+
+sampler2D SamplerDepth = sampler_state
+{
+	Texture   = <texDepth>;
+	MinFilter = POINT;
+	MagFilter = POINT;
+	MipFilter = NONE;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+	SRGBTexture=FALSE;
+	MaxMipLevel=0;
+	MipMapLodBias=0;
+};
+
+//////////////////
+//	 STRUCTS	//
+//////////////////
+struct VS_OUTPUT_POST
+{
+	float4 vpos  : POSITION;
+	float2 txcoord : TEXCOORD0;
+};
+
+struct VS_INPUT_POST
+{
+	float3 pos  : POSITION;
+	float2 txcoord : TEXCOORD0;
+};
+
+VS_OUTPUT_POST VS_PostProcess(VS_INPUT_POST IN)
+{
+	VS_OUTPUT_POST OUT;
+
+	float4 pos=float4(IN.pos.x,IN.pos.y,IN.pos.z,1.0);
+
+	OUT.vpos=pos;
+	OUT.txcoord.xy=IN.txcoord.xy;
+
+	return OUT;
+}
+
+//////////////////
+// HELPER FUNCS //
+//////////////////
+
+float3 RGBToHSL(float3 color)
+{
+	float3 hsl; // init to 0 to avoid warnings ? (and reverse if + remove first part)
+	
+	float fmin = min(min(color.r, color.g), color.b);
+	float fmax = max(max(color.r, color.g), color.b);
+	float delta = fmax - fmin;
+
+	hsl.z = (fmax + fmin) / 2.0;
+
+	if (delta == 0.0) //No chroma
+	{
+		hsl.x = 0.0;	// Hue
+		hsl.y = 0.0;	// Saturation
+	}
+	else //Chromatic data
+	{
+		if (hsl.z < 0.5)
+			hsl.y = delta / (fmax + fmin); // Saturation
+		else
+			hsl.y = delta / (2.0 - fmax - fmin); // Saturation
+		
+		float deltaR = (((fmax - color.r) / 6.0) + (delta / 2.0)) / delta;
+		float deltaG = (((fmax - color.g) / 6.0) + (delta / 2.0)) / delta;
+		float deltaB = (((fmax - color.b) / 6.0) + (delta / 2.0)) / delta;
+
+		if (color.r == fmax )
+			hsl.x = deltaB - deltaG; // Hue
+		else if (color.g == fmax)
+			hsl.x = (1.0 / 3.0) + deltaR - deltaB; // Hue
+		else if (color.b == fmax)
+			hsl.x = (2.0 / 3.0) + deltaG - deltaR; // Hue
+
+		if (hsl.x < 0.0)
+			hsl.x += 1.0; // Hue
+		else if (hsl.x > 1.0)
+			hsl.x -= 1.0; // Hue
+	}
+
+	return hsl;
+}
+
+float HueToRGB(float f1, float f2, float hue)
+{
+	if (hue < 0.0)
+		hue += 1.0;
+	else if (hue > 1.0)
+		hue -= 1.0;
+	float res;
+	if ((6.0 * hue) < 1.0)
+		res = f1 + (f2 - f1) * 6.0 * hue;
+	else if ((2.0 * hue) < 1.0)
+		res = f2;
+	else if ((3.0 * hue) < 2.0)
+		res = f1 + (f2 - f1) * ((2.0 / 3.0) - hue) * 6.0;
+	else
+		res = f1;
+	return res;
+}
+
+float3 HSLToRGB(float3 hsl)
+{
+	float3 rgb;
+	
+	if (hsl.y == 0.0)
+		rgb = float3(hsl.z, hsl.z, hsl.z); // Luminance
+	else
+	{
+		float f2;
+		
+		if (hsl.z < 0.5)
+			f2 = hsl.z * (1.0 + hsl.y);
+		else
+			f2 = (hsl.z + hsl.y) - (hsl.y * hsl.z);
+			
+		float f1 = 2.0 * hsl.z - f2;
+		
+		rgb.r = HueToRGB(f1, f2, hsl.x + (1.0/3.0));
+		rgb.g = HueToRGB(f1, f2, hsl.x);
+		rgb.b= HueToRGB(f1, f2, hsl.x - (1.0/3.0));
+	}
+	
+	return rgb;
+}
+
+// PI, required to calculate weight
+static const float PI = 3.1415926535897932384626433832795;
+
+// Luminance Blend
+float3 BlendLuma( float3 base, float3 blend )
+{
+	float3 HSLBase 	= RGBToHSL( base );
+	float3 HSLBlend	= RGBToHSL( blend );
+	return HSLToRGB( float3( HSLBase.x, HSLBase.y, HSLBlend.z ));
+}
+
+// Pseudo Random Number generator. 
+float random(in float2 uv)
+{
+float2 noise = (frac(sin(dot(uv , float2(12.9898,78.233) * 2.0)) * 43758.5453));
+return abs(noise.x + noise.y) * 0.5;
+}
+
+// Linear depth
+float linearDepth(float d, float n, float f)
+{
+	return (2.0 * n)/(f + n - d * (f - n));
+}
+
+//////////////////
+//	 SHADERS	//
+//////////////////
+
+float4 PS_ProcessGaussianH(VS_OUTPUT_POST IN) : COLOR
+{
+	float px 			= ScreenSize.y; 
+	float4 color		= 0.0;
+	float Depth			= tex2D( SamplerDepth, IN.txcoord.xy ).x;
+	float linDepth		= linearDepth( Depth, 0.5f, farDepth );
+	
+	float SigmaSum		= 0.0f;
+	float sampleOffset	= 1.0f;
+	
+	//Gaussian
+	float BlurSigma		= lerp( BlurSigmaE, BlurSigmaI, EInteriorFactor );
+	BlurSigma			= max( BlurSigma * ( 1.0f - linDepth ), 0.3f );
+	float3 Sigma;
+	Sigma.x				= 1.0f / ( sqrt( 2.0f * PI ) * BlurSigma );
+	Sigma.y				= exp( -0.5f / ( BlurSigma * BlurSigma ));
+	Sigma.z				= Sigma.y * Sigma.y;
+	
+	//Center weight
+	color				= tex2D(SamplerColor2, IN.txcoord.xy);
+	color				*= Sigma.x;
+	SigmaSum			+= Sigma.x;
+	Sigma.xy			*= Sigma.yz;
+
+	for(int i = 0; i < 7; ++i) {
+		color 			+= tex2D(SamplerColor2, IN.txcoord.xy + float2(sampleOffset*px, 0.0)) * Sigma.x;
+		color 			+= tex2D(SamplerColor2, IN.txcoord.xy - float2(sampleOffset*px, 0.0)) * Sigma.x;
+		SigmaSum		+= ( 2.0f * Sigma.x );
+		sampleOffset	= sampleOffset + 1.0f;
+		Sigma.xy		*= Sigma.yz;
+		}
+		
+	color.xyz			/= SigmaSum;
+	color.w				= 1.0f;
+	return color;
+}
+
+float4 PS_ProcessGaussianV(VS_OUTPUT_POST IN) : COLOR
+{
+	float sHeight		= ScreenSize.x * ScreenSize.w;
+	float py 			= 1.0 / sHeight;
+	float4 color		= 0.0;
+	float Depth			= tex2D( SamplerDepth, IN.txcoord.xy ).x;
+	float linDepth		= linearDepth( Depth, 0.5f, farDepth );
+	
+	float SigmaSum		= 0.0f;
+	float sampleOffset	= 1.0f;
+	
+	//Gaussian
+	float BlurSigma		= lerp( BlurSigmaE, BlurSigmaI, EInteriorFactor );
+	BlurSigma			= max( BlurSigma * ( 1.0f - linDepth ), 0.3f );
+	float3 Sigma;
+	Sigma.x				= 1.0f / ( sqrt( 2.0f * PI ) * BlurSigma );
+	Sigma.y				= exp( -0.5f / ( BlurSigma * BlurSigma ));
+	Sigma.z				= Sigma.y * Sigma.y;
+	
+	//Center weight
+	color				= tex2D(SamplerColor2, IN.txcoord.xy);
+	color				*= Sigma.x;
+	SigmaSum			+= Sigma.x;
+	Sigma.xy			*= Sigma.yz;
+
+	for(int i = 0; i < 7; ++i) {
+		color 			+= tex2D(SamplerColor2, IN.txcoord.xy + float2(0.0, sampleOffset*py)) * Sigma.x;
+		color 			+= tex2D(SamplerColor2, IN.txcoord.xy - float2(0.0, sampleOffset*py)) * Sigma.x;
+		SigmaSum		+= ( 2.0f * Sigma.x );
+		sampleOffset	= sampleOffset + 1.0f;
+		Sigma.xy		*= Sigma.yz;
+		}
+	
+	color.xyz			/= SigmaSum;
+	color.w				= 1.0f;
+	return color;
+}
+
+float4 PS_ProcessEdges(VS_OUTPUT_POST IN) : COLOR
+{
+	float Sharpening	= lerp( SharpeningE, SharpeningI, EInteriorFactor );
+	float Threshold		= lerp( ThresholdE, ThresholdI, EInteriorFactor ) / 255;
+	
+	float4 color;
+	float4 orig			= tex2D(SamplerColor, IN.txcoord.xy);
+	float4 blurred		= tex2D(SamplerColor2, IN.txcoord.xy);
+	
+	//Find edges
+	orig.xyz			= saturate( orig.xyz );
+	blurred.xyz			= saturate( blurred.xyz );
+	float3 Edges		= max( saturate( orig.xyz - blurred.xyz ) - Threshold, 0.0f );
+	float3 invBlur		= saturate( 1.0f - blurred.xyz );
+	float3 originvBlur	= saturate( orig.xyz + invBlur.xyz );
+	float3 invOrigBlur	= max( saturate( 1.0f - originvBlur.xyz ) - Threshold, 0.0f );
+	
+	float3 edges		= max(( saturate( Sharpening * Edges.xyz )) - ( saturate( Sharpening * invOrigBlur.xyz )), 0.0f );
+	
+	color.xyz			= edges.xyz;
+	color.w				= 1.0f;
+	return color;
+}
+
+float4 PS_ProcessSharpen1(VS_OUTPUT_POST IN) : COLOR
+{
+	//Smooth out edges with extremely light gaussian
+	float4 edges		= tex2D(SamplerColor2, IN.txcoord.xy);
+	
+	if (smooth_edges==false) return edges;
+	
+	float px 			= ScreenSize.y; 
+	float4 color		= 0.0;
+	
+	float SigmaSum		= 0.0f;
+	float sampleOffset	= 1.0f;
+	
+	//Gaussian
+	float BlurSigma		= smooth;
+	float3 Sigma;
+	Sigma.x				= 1.0f / ( sqrt( 2.0f * PI ) * BlurSigma );
+	Sigma.y				= exp( -0.5f / ( BlurSigma * BlurSigma ));
+	Sigma.z				= Sigma.y * Sigma.y;
+	
+	//Center weight
+	edges				*= Sigma.x;
+	SigmaSum			+= Sigma.x;
+	Sigma.xy			*= Sigma.yz;
+
+	for(int i = 0; i < 5; ++i) {
+		edges 			+= tex2D(SamplerColor2, IN.txcoord.xy + float2(sampleOffset*px, 0.0)) * Sigma.x;
+		edges 			+= tex2D(SamplerColor2, IN.txcoord.xy - float2(sampleOffset*px, 0.0)) * Sigma.x;
+		SigmaSum		+= ( 2.0f * Sigma.x );
+		sampleOffset	= sampleOffset + 1.0f;
+		Sigma.xy		*= Sigma.yz;
+		}
+		
+	color.xyz			= edges.xyz / SigmaSum;
+	color.w				= 1.0f;
+	return color;
+
+}
+
+float4 PS_ProcessSharpen2(VS_OUTPUT_POST IN) : COLOR
+{
+	float4 orig			= tex2D(SamplerColor, IN.txcoord.xy);
+	float4 edges		= tex2D(SamplerColor2, IN.txcoord.xy);
+
+	//Smooth out edges (reduce aliasing) - expensive, likely
+	float sHeight		= ScreenSize.x * ScreenSize.w;
+	float py 			= 1.0 / sHeight;
+	float4 color		= 0.0;
+	
+	if (smooth_edges==true) {
+	
+		float SigmaSum		= 0.0f;
+		float sampleOffset	= 1.0f;
+		
+		//Gaussian
+		float BlurSigma		= smooth;
+		float3 Sigma;
+		Sigma.x				= 1.0f / ( sqrt( 2.0f * PI ) * BlurSigma );
+		Sigma.y				= exp( -0.5f / ( BlurSigma * BlurSigma ));
+		Sigma.z				= Sigma.y * Sigma.y;
+		
+		//Center weight
+		edges				*= Sigma.x;
+		SigmaSum			+= Sigma.x;
+		Sigma.xy			*= Sigma.yz;
+
+		for(int i = 0; i < 5; ++i) {
+			edges 			+= tex2D(SamplerColor2, IN.txcoord.xy + float2(0.0, sampleOffset*py)) * Sigma.x;
+			edges 			+= tex2D(SamplerColor2, IN.txcoord.xy - float2(0.0, sampleOffset*py)) * Sigma.x;
+			SigmaSum		+= ( 2.0f * Sigma.x );
+			sampleOffset	= sampleOffset + 1.0f;
+			Sigma.xy		*= Sigma.yz;
+			}
+		
+		edges.xyz			/= SigmaSum;
+	}
+	
+	if (show_edges==true) {
+		color.w 		= 1.0f;
+		if(luma_sharpen==true) {
+			color.xyz 	= min( dot( edges.xyz, float3( 0.2126, 0.7152, 0.0722 )), limiter );
+			} else {
+			color.xyz 	= edges.xyz * limiter;
+			}
+		return color;
+	}
+	
+	if (luma_sharpen==true) {
+		float3 blend	= saturate( orig.xyz + min( dot( edges.xyz, float3( 0.2126, 0.7152, 0.0722 )), limiter ));
+		color.xyz		= BlendLuma( orig.xyz, blend.xyz );
+		} else {
+		color.xyz		= saturate( orig.xyz + ( edges.xyz * limiter ));
+	}
+	
+	if (shader_off==true) color.xyz = orig.xyz;
+
+	color.w				= 1.0f;
+	return color;
+
+}
+		
+float4 PS_ProcessAfterFX(VS_OUTPUT_POST IN) : COLOR
+{
+	float4 color		= tex2D(SamplerColor2, IN.txcoord.xy);
+	
+	if (use_noise==true)
+		{
+		float GrainTimerSeed 		= Timer.x * GrainMotion;
+		float2 GrainTexCoordSeed 	= IN.txcoord.xy * 1.0;
+		
+		//Generate grain seeds
+		float2 GrainSeed1 	= GrainTexCoordSeed + float2( 0.0, GrainTimerSeed );
+		float2 GrainSeed2 	= GrainTexCoordSeed + float2( GrainTimerSeed, 0.0 );
+		float2 GrainSeed3 	= GrainTexCoordSeed + float2( GrainTimerSeed, GrainTimerSeed );
+		
+		//Generate pseudo random noise
+		float GrainNoise1 	= random( GrainSeed1 );
+		float GrainNoise2 	= random( GrainSeed2 );
+		float GrainNoise3 	= random( GrainSeed3 );
+		float GrainNoise4 	= ( GrainNoise1 + GrainNoise2 + GrainNoise3 ) * 0.333333333;
+		
+		//Combine results
+		float3 GrainNoise 	= float3( GrainNoise4, GrainNoise4, GrainNoise4 );
+		float3 GrainColor 	= float3( GrainNoise1, GrainNoise2, GrainNoise3 );
+		
+		//Add noise to color
+		color.xyz 			+= ( lerp( GrainNoise, GrainColor, GrainSaturation ) * GrainIntensity ) - ( GrainIntensity * 0.5);
+		}
+	
+	if (use_letterbox==true)
+		{
+			float offset 	= letterbox_size * 0.01;
+			if (IN.txcoord.y <= offset || IN.txcoord.y >= (1.0 - offset)) color.xyzw = 0.0;
+		}
+	
+	color.w				= 1.0f;
+	return color;
+}
+
+///////////////////////
+//	  TECHNIQUES	 //
+///////////////////////
+
+technique PostProcess
+{
+	pass P0
+	{
+		VertexShader = compile vs_3_0 VS_PostProcess();
+		PixelShader  = compile ps_3_0 PS_ProcessGaussianH();
+
+		DitherEnable=FALSE;
+		ZEnable=FALSE;
+		CullMode=NONE;
+		ALPHATESTENABLE=FALSE;
+		SEPARATEALPHABLENDENABLE=FALSE;
+		AlphaBlendEnable=FALSE;
+		StencilEnable=FALSE;
+		FogEnable=FALSE;
+		SRGBWRITEENABLE=FALSE;
+	}
+}
+
+technique PostProcess2
+{
+	pass P0
+	{
+		VertexShader = compile vs_3_0 VS_PostProcess();
+		PixelShader  = compile ps_3_0 PS_ProcessGaussianV();
+
+		DitherEnable=FALSE;
+		ZEnable=FALSE;
+		CullMode=NONE;
+		ALPHATESTENABLE=FALSE;
+		SEPARATEALPHABLENDENABLE=FALSE;
+		AlphaBlendEnable=FALSE;
+		StencilEnable=FALSE;
+		FogEnable=FALSE;
+		SRGBWRITEENABLE=FALSE;
+	}
+}
+
+technique PostProcess3
+{
+	pass P0
+	{
+		VertexShader = compile vs_3_0 VS_PostProcess();
+		PixelShader  = compile ps_3_0 PS_ProcessEdges();
+
+		DitherEnable=FALSE;
+		ZEnable=FALSE;
+		CullMode=NONE;
+		ALPHATESTENABLE=FALSE;
+		SEPARATEALPHABLENDENABLE=FALSE;
+		AlphaBlendEnable=FALSE;
+		StencilEnable=FALSE;
+		FogEnable=FALSE;
+		SRGBWRITEENABLE=FALSE;
+	}
+}
+
+technique PostProcess4
+{
+	pass P0
+	{
+		VertexShader = compile vs_3_0 VS_PostProcess();
+		PixelShader  = compile ps_3_0 PS_ProcessSharpen1();
+
+		DitherEnable=FALSE;
+		ZEnable=FALSE;
+		CullMode=NONE;
+		ALPHATESTENABLE=FALSE;
+		SEPARATEALPHABLENDENABLE=FALSE;
+		AlphaBlendEnable=FALSE;
+		StencilEnable=FALSE;
+		FogEnable=FALSE;
+		SRGBWRITEENABLE=FALSE;
+	}
+}
+
+technique PostProcess5
+{
+	pass P0
+	{
+		VertexShader = compile vs_3_0 VS_PostProcess();
+		PixelShader  = compile ps_3_0 PS_ProcessSharpen2();
+
+		DitherEnable=FALSE;
+		ZEnable=FALSE;
+		CullMode=NONE;
+		ALPHATESTENABLE=FALSE;
+		SEPARATEALPHABLENDENABLE=FALSE;
+		AlphaBlendEnable=FALSE;
+		StencilEnable=FALSE;
+		FogEnable=FALSE;
+		SRGBWRITEENABLE=FALSE;
+	}
+}
+
+technique PostProcess6
+{
+	pass P0
+	{
+		VertexShader = compile vs_3_0 VS_PostProcess();
+		PixelShader  = compile ps_3_0 PS_ProcessAfterFX();
+
+		DitherEnable=FALSE;
+		ZEnable=FALSE;
+		CullMode=NONE;
+		ALPHATESTENABLE=FALSE;
+		SEPARATEALPHABLENDENABLE=FALSE;
+		AlphaBlendEnable=FALSE;
+		StencilEnable=FALSE;
+		FogEnable=FALSE;
+		SRGBWRITEENABLE=FALSE;
+	}
+}
