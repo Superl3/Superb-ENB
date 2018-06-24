@@ -32,20 +32,22 @@ float	ECCDesaturateShadows
 
 	string param01 = "Interior - Day";
 float	PaletteIntDay = 1.0;
-float	PaletteBrightnessIntDay = 1.5;
-float	GammaIntDay = 1.35;
+float	PaletteBrightnessIntDay<	string UIName = "IntDay- PaletteBrightness";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 10.0; > = { 1.5 };
+float	GammaIntDay<	string UIName = "IntDay- Gamma";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 10.0; > = { 1.35 };
 float	EBrightnessIntDay<	string UIName="IntDay- Brightness";	string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=5.00;> = {0.15};
-float	EBrightnessCurveIntDay = 1.10;
-float	EBrightnessMultiplierIntDay = 0.5;
-float	EBrightnessToneMappingCurveIntDay = 0.35;
+float	EBrightnessCurveIntDay<	string UIName = "IntDay- Brightness Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.10 };
+float	EBrightnessMultiplierIntDay<	string UIName = "IntDay- Brightness Multiplier";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.5 };
+float	EBrightnessToneMappingCurveIntDay<	string UIName = "IntDay- Brightness ToneMapping Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.35 };
 float	EAdaptationMinIntDay<string UIName = "IntDay- Adapt Min";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.05 };
 float	EAdaptationIntDay<string UIName = "IntDay- Adapt";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.10 };
 float	EAdaptationMaxIntDay<string UIName = "IntDay- Adapt Max";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.10 };
-float	EToneMappingCurveIntDay = 5.0;
+float	EToneMappingCurveIntDay<	string UIName = "IntDay- ToneMapping Curve";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 100.0; > = { 5.0 };
 float	EIntensityContrastIntDay<	string UIName="IntDay- Contrast Intensity";	string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {1.15};
 float	EColorSaturationIntDay<	string UIName="IntDay- Saturation Intensity";	string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {1.1};
 float	EToneMappingOversaturationIntDay<	string UIName="IntDay- ToneMapping Oversaturation";	string UIWidget="Spinner";	float UIMin=0.0;	float UIMax=500.0;> = {1.0};
 	string param02 = "Interior - Night";
+
+
 float	PaletteIntNgt = 1.0;
 float	PaletteBrightnessIntNgt = 1.5;
 float	GammaIntNgt = 1.2;
@@ -76,27 +78,11 @@ float	EBrightnessDay<	string UIName = "Day- Brightness";	string UIWidget = "Spin
 float	EBrightnessCurveDay<	string UIName = "Day- Brightness Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.28 };
 float	EBrightnessMultiplierDay<	string UIName = "Day- Brightness Multiplier";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.28 };
 float	EBrightnessToneMappingCurveDay<	string UIName = "Day- Brightness ToneMapping Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.9 };
-
-//--------------------------------------------------
-
-float	PaletteNgt<	string UIName = "Ngt- Palette";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 10.0; > = { 1.0 };
-float	PaletteBrightnessNgt<	string UIName = "Ngt- PaletteBrightness";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 10.0; > = { 1.0 };
-float	GammaNgt<	string UIName = "Ngt- Gamma";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 10.0; > = { 1.0 };
-float	EAdaptationMinNgt<	string UIName = "Ngt- Min Adapation";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 1.00; > = { 0.02 };
-float	EAdaptationMaxNgt<	string UIName = "Ngt- Max Adapation";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 1.00; > = { 0.02 };
-float	EToneMappingCurveNgt<	string UIName = "Ngt- ToneMapping Curve";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 100.0; > = { 2.0 };
-float	EIntensityContrastNgt<	string UIName = "Ngt- Contrast Intensity";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.4 };
-float	EColorSaturationNgt<	string UIName = "Ngt- Saturation Intensity";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.9 };
-float	EToneMappingOversaturationNgt<	string UIName = "Ngt- ToneMapping Oversaturation";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 500.0; > = { 1.0 };
-float	EBrightnessNgt<	string UIName = "Ngt- Brightness";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 1.00; > = { 0.15 };
-float	EBrightnessCurveNgt<	string UIName = "Ngt- Brightness Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.28 };
-float	EBrightnessMultiplierNgt<	string UIName = "Ngt- Brightness Multiplier";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.28 };
-float	EBrightnessToneMappingCurveNgt<	string UIName = "Ngt- Brightness ToneMapping Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.9 };
 */
 	string param03 = "Exterior - Day";
-float	PaletteDay = 1.2;
+float	PaletteDay = 1.0;
 float	PaletteBrightnessDay = 1.0;
-float	GammaDay = 1.4;
+float	GammaDay<	string UIName = "Day- Gamma";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 10.0; > = { 1.4 };
 float	EAdaptationMinDay<string UIName = "Day- Adapt Min";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.01 };
 float	EAdaptationDay<string UIName = "Day- Adapt";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.07 };
 float	EAdaptationMaxDay<string UIName = "Day- Adapt Max";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.07 };
@@ -111,20 +97,20 @@ float	EBrightnessToneMappingCurveDay<	string UIName = "Day- Brightness ToneMappi
 
 //--------------------------------------------------
 	string param04 = "Exterior - Ngt";
-float	PaletteNgt = 1.0;
-float	PaletteBrightnessNgt = 8.0;
-float	GammaNgt = 1.25;
+float	PaletteNgt<	string UIName = "Ngt- Palette";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 10.0; > = { 1.0 };
+float	PaletteBrightnessNgt<	string UIName = "Ngt- PaletteBrightness";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 10.0; > = { 8.0 };
+float	GammaNgt<	string UIName = "Ngt- Gamma";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 10.0; > = { 1.25 };
 float	EAdaptationMinNgt<string UIName = "Ngt- Adapt Min";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.09 };
 float	EAdaptationNgt<string UIName = "Ngt- Adapt";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.11 };
 float	EAdaptationMaxNgt<string UIName = "Ngt- Adapt Max";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.11 };
-float	EToneMappingCurveNgt = 6.0;
+float	EToneMappingCurveNgt<	string UIName = "Ngt- ToneMapping Curve";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 100.0; > = { 6.0 };
 float	EIntensityContrastNgt<	string UIName = "Ngt- Contrast Intensity";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.4 };
 float	EColorSaturationNgt<	string UIName = "Ngt- Saturation Intensity";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.9 };
 float	EToneMappingOversaturationNgt<	string UIName = "Ngt- ToneMapping Oversaturation";	string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 500.0; > = { 1.0 };
 float	EBrightnessNgt<	string UIName = "Ngt- Brightness";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 5.00; > = { 0.15 };
-float	EBrightnessCurveNgt = 1.1;
-float	EBrightnessMultiplierNgt = 0.6;
-float	EBrightnessToneMappingCurveNgt = 0.5;
+float	EBrightnessCurveNgt<	string UIName = "Ngt- Brightness Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.1 };
+float	EBrightnessMultiplierNgt<	string UIName = "Ngt- Brightness Multiplier";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.6 };
+float	EBrightnessToneMappingCurveNgt<	string UIName = "Ngt- Brightness ToneMapping Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.5 };
 
 	string param05 = "Dungeon";
 // Dungeon controls
