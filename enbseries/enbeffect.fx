@@ -46,6 +46,10 @@ float	EAdaptationMinDay	<string UIName = "  Day- Min";	string UIWidget = "Spinne
 float	EAdaptationDay		<string UIName = "  Day- Adapt";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.45 };
 float	EAdaptationMaxDay	<string UIName = "  Day- Max";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.07 };
 
+float	EAdaptationMinMid	<string UIName = "  Mid- Min";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.03 };
+float	EAdaptationMid		<string UIName = "  Mid- Adapt";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.45 };
+float	EAdaptationMaxMid	<string UIName = "  Mid- Max";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.07 };
+
 float	EAdaptationhMinDay	<string UIName = "  Day- hMin";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.03 };
 float	EAdaptationhDay		<string UIName = "  Day- hAdapt";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.45 };
 float	EAdaptationhMaxDay	<string UIName = "  Day- hMax";	string UIWidget = "Spinner";	float UIMin = 0.01;	float UIMax = 1.00; > = { 0.07 };
@@ -290,6 +294,42 @@ float WthrTransition(float WTHRINDEX_START, float WTHRINDEX_ENDS)
   return lerp(wthrlvl.x, wthrlvl.y, step(WeatherAndTime.z, 0.5));
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Functions to calculate day/night/sunrise/sunset separation factors by kingeric1992/Phinix.
+// NOTE: If you change values in enbseries.ini [TIMEOFDAY] change them here to match.
+
+#define TOD_SRD 2		// DawnDuration
+#define TOD_SRT 7.5		// SunriseTime
+#define TOD_DAT 13		// DayTime
+#define TOD_SST 18.5	// SunsetTime
+#define TOD_SSD 2		// DuskDuration
+#define TOD_NIT 1		// NightTime
+
+#define TOD(parm)    getState2( TODfactors(),parm##Dun, parm##IntDay, parm##IntNgt, parm##Day, parm##Ngt, parm##Mid)
+#define TOD2(parm)	getState(parm##Dun, parm##IntDay, parm##IntNgt, parm##Day, parm##Ngt)
+
+//returns (TOD factor sunrise, TOD factor day, TOD factor sunset, TOD factor night)
+float4 TODfactors()
+{
+	float4 weight = WeatherAndTime.w;
+	weight.xy -= TOD_SRT;
+	weight.zw -= TOD_SST;
+	weight /= float4(-TOD_SRD, TOD_DAT - TOD_SRT, TOD_DAT - TOD_SST, TOD_SSD);
+	weight = saturate(weight);
+	weight.yz = sin(weight.yz * 1.57);// pi/2
+	weight.xw = 1 - weight.xw;
+	return float4(weight.x*(1 - weight.y), weight.y*weight.z, (1 - weight.z)*weight.w, 1 - weight.w*weight.x);
+}
+float getState2(float4 factors, float Dungeon, float D_I, float N_I, float D_E, float N_E, float MID_E)
+{
+	if (WeatherAndTime.x == 0 || (WeatherAndTime.x >= 25 && WeatherAndTime.x <= 39))
+		return Dungeon;
+	return lerp(dot(factors, float4(MID_E, D_E, MID_E, N_E)), lerp(N_I, D_I, ENightDayFactor), EInteriorFactor);
+}
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -339,10 +379,11 @@ float4 PS_D6EC7DD1(VS_OUTPUT_POST IN, float2 vPos : VPOS) : COLOR
 
 	float4 color=_oC0;
 	
-	float Gamma = getState(GammaDun, GammaIntDay, GammaIntNgt, GammaDay, GammaNgt);
-	float Adapt = getState(EAdaptationDun, EAdaptationIntDay, EAdaptationIntNgt, EAdaptationDay, EAdaptationNgt);
-	float AdaptMin = getState(EAdaptationMinDun, EAdaptationMinIntDay, EAdaptationMinIntNgt, EAdaptationMinDay, EAdaptationMinNgt);
-	float AdaptMax = getState(EAdaptationMaxDun, EAdaptationMaxIntDay, EAdaptationMaxIntNgt, EAdaptationMaxDay, EAdaptationMaxNgt);
+	float Gamma = TOD2(Gamma);
+
+	float Adapt = TOD(EAdaptation);
+	float AdaptMin = TOD(EAdaptationMin);
+	float AdaptMax = TOD(EAdaptationMax);
 
 	if (WeatherAndTime.x >= 6 && WeatherAndTime.x <= 9 && EInteriorFactor == 0) {
 		AdaptMin = lerp(AdaptMin, lerp(EAdaptationMinNgt, EAdaptationhMinDay, ENightDayFactor), WthrTransition(6,9));
@@ -350,14 +391,14 @@ float4 PS_D6EC7DD1(VS_OUTPUT_POST IN, float2 vPos : VPOS) : COLOR
 		AdaptMax = lerp(AdaptMax, lerp(EAdaptationMaxNgt, EAdaptationhMaxDay, ENightDayFactor), WthrTransition(6,9));
 	}
 
-	float Brightness = getState(EBrightnessDun, EBrightnessIntDay, EBrightnessIntNgt, EBrightnessDay, EBrightnessNgt);
-	float BrightnessCurve = getState(EBrightnessCurveDun, EBrightnessCurveIntDay, EBrightnessCurveIntNgt, EBrightnessCurveDay, EBrightnessCurveNgt);
-	float BrightnessMultiplier = getState(EBrightnessMultiplierDun, EBrightnessMultiplierIntDay, EBrightnessMultiplierIntNgt, EBrightnessMultiplierDay, EBrightnessMultiplierNgt);
-	float BrightnessToneMappingCurve = getState(EBrightnessToneMappingCurveDun, EBrightnessToneMappingCurveIntDay, EBrightnessToneMappingCurveIntNgt, EBrightnessToneMappingCurveDay, EBrightnessToneMappingCurveNgt);
-	float ColorSaturation = getState(EColorSaturationDun, EColorSaturationIntDay, EColorSaturationIntNgt, EColorSaturationDay, EColorSaturationNgt);
-	float IntensityContrast = getState(EIntensityContrastDun, EIntensityContrastIntDay, EIntensityContrastIntNgt, EIntensityContrastDay, EIntensityContrastNgt);
-	float ToneMappingCurve = getState(EToneMappingCurveDun, EToneMappingCurveIntDay, EToneMappingCurveIntNgt, EToneMappingCurveDay, EToneMappingCurveNgt);
-	float ToneMappingOversaturation = getState(EToneMappingOversaturationDun, EToneMappingOversaturationIntDay, EToneMappingOversaturationIntNgt, EToneMappingOversaturationDay, EToneMappingOversaturationNgt);
+	float Brightness = TOD2(EBrightness);
+	float BrightnessCurve = TOD2(EBrightnessCurve);
+	float BrightnessMultiplier = TOD2(EBrightnessMultiplier);
+	float BrightnessToneMappingCurve = TOD2(EBrightnessToneMappingCurve);
+	float ColorSaturation = TOD2(EColorSaturation);
+	float IntensityContrast = TOD2(EIntensityContrast);
+	float ToneMappingCurve = TOD2(EToneMappingCurve);
+	float ToneMappingOversaturation = TOD2(EToneMappingOversaturation);
 
 	//adaptation in time
 	float4	Adaptation=tex2D(_s4, 0.5);
@@ -391,8 +432,8 @@ float4 PS_D6EC7DD1(VS_OUTPUT_POST IN, float2 vPos : VPOS) : COLOR
 
 
 	//pallete texture (0.082+ version feature)
-	float newpalette = getState(PaletteDun, PaletteIntDay, PaletteIntNgt, PaletteDay, PaletteNgt);
-	float newpalettebrightness = getState(PaletteBrightnessDun, PaletteBrightnessIntDay, PaletteBrightnessIntNgt, PaletteBrightnessDay, PaletteBrightnessNgt);
+	float newpalette = TOD2(Palette);
+	float newpalettebrightness = TOD2(PaletteBrightness);
 
 	color.rgb=saturate(color.rgb);
 	float3	brightness=Adaptation.xyz;//tex2D(_s4, 0.5);//adaptation luminance
