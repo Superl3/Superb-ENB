@@ -88,24 +88,24 @@ string param07 = "+Interior";
 
 //--------------------------------------------------
 
-float	EIntensityContrastIntDay		<string UIName = "  IntDay- Contrast";			string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {1.1};
-float	EColorSaturationIntDay		<string UIName = "  IntDay- Saturation";		string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {0.8};
-float	EBrightnessIntDay			<string UIName = "  IntDay- Brightness";		string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=5.00;> = {0.09};
-float	EBrightnessCurveIntDay		<string UIName = "  IntDay- Bright Curve";		string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.10 };
-float	EBrightnessMultiplierIntDay		<string UIName = "  IntDay- Bright Multiplier";		string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.5 };
-float	EBrightnessToneMappingCurveIntDay	<string UIName = "  IntDay- Bright Tonemap Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.35 };
-float	EToneMappingCurveIntDay		<string UIName = "  IntDay- Tonemap Curve";		string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 100.0; > = { 4.0 };
-float	EToneMappingOversaturationIntDay	<string UIName = "  IntDay- Tonemap Oversaturation";	string UIWidget="Spinner";	float UIMin=0.0;	float UIMax=500.0;> = {2.0};
+float	EIntensityContrastIntDay			<string UIName="  IntDay- Contrast";				string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {1.1};
+float	EColorSaturationIntDay				<string UIName="  IntDay- Saturation";				string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {0.8};
+float	EBrightnessIntDay					<string UIName="  IntDay- Brightness";				string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=5.00;> = {0.09};
+float	EBrightnessCurveIntDay				<string UIName="  IntDay- Bright Curve";			string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 1.10 };
+float	EBrightnessMultiplierIntDay			<string UIName="  IntDay- Bright Multiplier";		string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.5 };
+float	EBrightnessToneMappingCurveIntDay	<string UIName="  IntDay- Bright Tonemap Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.35 };
+float	EToneMappingCurveIntDay				<string UIName="  IntDay- Tonemap Curve";			string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 100.0; > = { 4.0 };
+float	EToneMappingOversaturationIntDay	<string UIName="  IntDay- Tonemap Oversaturation";	string UIWidget="Spinner";	float UIMin=0.0;	float UIMax=500.0;> = {2.0};
 
 //--------------------------------------------------
 
-float	EIntensityContrastIntNgt		<string UIName="  IntNgt- Contrast";			string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {1.0};
-float	EColorSaturationIntNgt		<string UIName="  IntNgt- Saturation";			string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {0.75};
-float	EBrightnessIntNgt			<string UIName="  IntNgt- Brightness";			string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=5.00;> = {0.25};
-float	EBrightnessCurveIntNgt = 1.1;
-float	EBrightnessMultiplierIntNgt = 0.6;
-float	EBrightnessToneMappingCurveIntNgt = 0.5;
-float	EToneMappingCurveIntNgt = 5.0;
+float	EIntensityContrastIntNgt			<string UIName="  IntNgt- Contrast";				string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {1.0};
+float	EColorSaturationIntNgt				<string UIName="  IntNgt- Saturation";				string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=10.00;> = {0.75};
+float	EBrightnessIntNgt					<string UIName="  IntNgt- Brightness";				string UIWidget="Spinner";	float UIMin=0.00;	float UIMax=5.00;> = {0.25};
+float	EBrightnessCurveIntNgt				<string UIName="  IntNgt- Bright Curve";			string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 5.00; > = { 1.1 };
+float	EBrightnessMultiplierIntNgt			<string UIName="  IntNgt- Bright Multiplier";		string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.6 };
+float	EBrightnessToneMappingCurveIntNgt	<string UIName="  IntNgt- Bright Tonemap Curve";	string UIWidget = "Spinner";	float UIMin = 0.00;	float UIMax = 10.00; > = { 0.5 };
+float	EToneMappingCurveIntNgt				<string UIName="  IntNgt- Tonemap Curve";			string UIWidget = "Spinner";	float UIMin = 0.0;	float UIMax = 100.0; > = { 5.0 };
 float	EToneMappingOversaturationIntNgt	<string UIName="  IntNgt- Tonemap Oversaturation";	string UIWidget="Spinner";	float UIMin=0.0;	float UIMax=500.0;> = {8.0};
 
 //--------------------------------------------------
